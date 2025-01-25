@@ -516,8 +516,15 @@ impl Serialize for HeaderSet {
         S: serde::Serializer,
     {
         let mut headers_map = std::collections::BTreeMap::new();
-        for header in self.0.iter().filter(|header| header.name.is_some() && header.value.is_some()) {
-            headers_map.insert(header.name.as_ref().unwrap(), header.value.as_ref().unwrap());
+        for header in self
+            .0
+            .iter()
+            .filter(|header| header.name.is_some() && header.value.is_some())
+        {
+            headers_map.insert(
+                header.name.as_ref().unwrap(),
+                header.value.as_ref().unwrap(),
+            );
         }
         headers_map.serialize(serializer)
     }
@@ -543,11 +550,10 @@ impl<'de> serde::Deserialize<'de> for HeaderSet {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn sent_email_builder_with_missing_content() {
