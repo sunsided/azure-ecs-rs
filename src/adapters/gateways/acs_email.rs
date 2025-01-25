@@ -14,6 +14,7 @@ use reqwest::header::RETRY_AFTER;
 use reqwest::{Client, StatusCode};
 use std::sync::Arc;
 use std::time::Duration;
+use azure_core::error::ErrorKind;
 use tokio::sync::oneshot;
 use tokio::time::sleep;
 use url::Url;
@@ -278,18 +279,20 @@ async fn get_access_token(auth_method: &ACSAuthMethod) -> Result<String, String>
                 .get_token(&["https://communication.azure.com/.default"])
                 .await
                 .map_err(|e| format!("Failed to get access token: {}", e))?;
-
-
             return Ok(token.token.secret().to_owned());
         }
         ACSAuthMethod::ManagedIdentity => {
             let credential =
                 create_credential().map_err(|e| format!("Failed to create credential: {}", e))?;
-            let token = credential
-                .get_token(&["https://communication.azure.com/.default"])
-                .await
-                .map_err(|e| format!("Failed to get access token: {}", e))?;
-            return Ok(token.token.secret().to_owned());
+            return match credential
+                .get_token(&["https://communication.azure.com/.default"]).await
+            {
+                Ok(token) => Ok(token.token.secret().to_owned()),
+                Err(err) => {
+                    error!(kind = err.kind().to_string(); "Error while getting Managed Identity access token: {}", err);
+                    Err(format!("Failed to get access token: {}", err))
+                }
+            }
         }
         _ => {}
     }

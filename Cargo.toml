@@ -13,7 +13,7 @@ categories = ["api-bindings", "email"]
 
 
 [dependencies]
-log = "0.4"
+log = { version = "0.4", features = ["kv", "kv_serde"] }
 serde = { version = "1.0" , features = ["derive"]}
 serde_derive = "1.0"
 serde_json = "1.0"
