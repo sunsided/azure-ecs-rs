@@ -256,7 +256,7 @@ fn create_http_client() -> Arc<dyn HttpClient> {
 /// # Returns
 ///
 /// * `Result<String, String>` - The result of the token acquisition, containing the token if successful.
-async fn get_access_token(auth_method: &ACSAuthMethod) -> Result<String, String> {
+async fn get_access_token(auth_method: &ACSAuthMethod) -> Result<String, GetAccessTokenError> {
     match auth_method {
         ACSAuthMethod::ServicePrincipal {
             tenant_id,
@@ -278,25 +278,42 @@ async fn get_access_token(auth_method: &ACSAuthMethod) -> Result<String, String>
             let token = credential
                 .get_token(&["https://communication.azure.com/.default"])
                 .await
-                .map_err(|e| format!("Failed to get access token: {}", e))?;
+                .map_err(GetAccessTokenError::GetAccessToken)?;
             return Ok(token.token.secret().to_owned());
         }
         ACSAuthMethod::ManagedIdentity => {
-            let credential =
-                create_credential().map_err(|e| format!("Failed to create credential: {}", e))?;
+            let credential = create_credential().map_err(GetAccessTokenError::CreateTokenCredential)?;;
             return match credential
                 .get_token(&["https://communication.azure.com/.default"]).await
             {
                 Ok(token) => Ok(token.token.secret().to_owned()),
                 Err(err) => {
-                    error!(kind = err.kind().to_string(); "Error while getting Managed Identity access token: {}", err);
-                    Err(format!("Failed to get access token: {}", err))
+                    error!(kind = err.kind().to_string(); "Error while getting Managed Identity access token: {err} ({})", err.kind());
+                    Err(GetAccessTokenError::GetAccessToken(err))
                 }
             }
         }
         _ => {}
     }
     Ok("".to_string())
+}
+
+/// Access token errors.
+#[derive(Debug)]
+pub enum GetAccessTokenError {
+    CreateTokenCredential(azure_core::Error),
+    GetAccessToken(azure_core::Error),
+}
+
+impl std::error::Error for GetAccessTokenError {}
+
+impl std::fmt::Display for GetAccessTokenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GetAccessTokenError::CreateTokenCredential(err) => write!(f, "Failed to create token credential: {err} ({})", err.kind()),
+            GetAccessTokenError::GetAccessToken(err) => write!(f, "Failed to get access token: {err} ({})", err.kind())
+        }
+    }
 }
 
 /// Create headers for the request based on the provided authentication method.
