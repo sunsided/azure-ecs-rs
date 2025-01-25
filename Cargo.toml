@@ -26,11 +26,11 @@ base64 = "0.22"
 url = "2.3"
 
 azure_core = { version = "0.21" }
-azure_identity = { version = "0.21",default-features = false, features = ["development", "tz-rs", "enable_reqwest_rustls"]}
+azure_identity = { version = "0.21", default-features = false, features = ["tz-rs", "enable_reqwest", "enable_reqwest_rustls"]}
 infer = "0.16"
 
 [dev-dependencies]
-dotenv = "0.15"
+dotenvy = "0.15"
 pretty_env_logger = "0.5"
 clap = {version = "4.5", features = ["derive"]}
 lettre = { version = "0.11" ,default-features = false, features = ["builder","hostname","rustls-tls","pool","smtp-transport"]}

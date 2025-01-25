@@ -19,7 +19,7 @@ fn get_env_var(var_name: &str) -> String {
 }
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
     pretty_env_logger::init();
 
     let sender = get_env_var("SENDER");
